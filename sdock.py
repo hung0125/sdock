@@ -24,7 +24,6 @@ Filter:ETF:IVV VUG BRK-B VOO QQQ
 Filter:AI Energy:VST NRG TLN AMAT KLAC
 Filter:Sun Energy:FSLR ENPH RUN
 Filter:Defensive:[Drink] KO PEP [Telecom] MSI TMUS [Payment] V MA AXP [Store] WMT TGT COST [Construction] DHI LEN PHM [Bank] JPM BAC
-Filter:test:jpm azn pep ms unp regn elv schw c aph cmg cvs tgt
 '''.strip()
 if not isfile('stocksDB.txt'):
     open('stocksDB.txt', 'wb').write(templateScript)
@@ -90,7 +89,8 @@ def mo_analysis(m_gains, stockcode):
         final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): {round(np.mean(m_gains[M]), 2)}%\tAll: ({gain_str})\n'
         
         to_num = m_gain_confd(m_gains[M])[:-1].split('/')
-        wins.append(int(to_num[0])/int(to_num[1]) * 100)
+        if int(to_num[1]) > 0:
+            wins.append(int(to_num[0])/int(to_num[1]) * 100)
 
     cur_vals = list(combo_mth["values"])
     cur_vals.append(f'{stockcode},avg_win={round(np.mean(wins), 1)}%,max_win={round(np.max(wins), 1)}%')
@@ -308,6 +308,10 @@ def base_stock_anal(stock_idx_or_name):
             F.pop() # remove buy timestamp
             output_table_f.insert("", "end", values=tuple(F))
         print(tabulate(filter_list, headers=['Code', 'EMA D.', 'Win/Lose', 'Gain %', 'Last EMA $', '$ Now', 'Last Trade', f'Near Mth Gain %'], tablefmt='mixed_grid'))
+    
+    if len(stocks[stock_c]) == 1:
+        input_stock.delete(0, tk.END)
+        input_stock.insert(0, stocks[stock_c][0])
 
 def clear_tmp():
     global trade_details, month_gain_details
@@ -316,6 +320,7 @@ def clear_tmp():
     combo_mth['values'] = []
     combo_mth.set('Select one')
     pb['value'] = 0
+    input_stock.delete(0, tk.END)
 
 # ------------------------------------------------------------
 def prt(text):
@@ -387,12 +392,12 @@ def handle_month_analysis(event):
     if not combo_mth.get(): return
     selected_value = combo_mth.get().split(',')
     
-    custom_messagebox(f"Monthly Gain Summary ({selected_value[0]})", month_gain_details[selected_value[0]], 12)
+    custom_messagebox(f"Monthly Gain Summary ({selected_value[0]}): By month - Average WR: {selected_value[1].split('=')[1]}, Max WR: {selected_value[2].split('=')[1]}%", month_gain_details[selected_value[0]], 12)
 
 
 # Create the main window
 root = tk.Tk()
-root.title("Tkinter Program")
+root.title("Sdock - Your Trading Tenga💦")
 root.geometry("800x650")
 
 # First row: dynamically generated buttons based on file contents
