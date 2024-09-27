@@ -84,7 +84,7 @@ def mo_analysis(m_gains, stockcode):
     final_out = ''
     wins = []
     for M in months:
-        lth = m_gains[M][-1 if m_gains[M][-1] != 0 else -2] > 0
+        lth = m_gains[M][0] > 0 if m_gains[M][0] != 0 else m_gains[M][1] > 0
         gain_str = " -> ".join([str(round(num, 1)) if num != 0 else '?' for num in m_gains[M]][::-1])
         final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): {round(np.mean(m_gains[M]), 2)}%\tAll: ({gain_str})\n'
         
