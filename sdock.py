@@ -83,8 +83,10 @@ def getBaseTx(dat, emas_line, idx):
 def mo_analysis(m_gains, stockcode):
     final_out = ''
     wins = []
+    maxyr = 0
     for M in months:
-        lth = m_gains[M][0] > 0 if m_gains[M][0] != 0 else m_gains[M][1] > 0
+        lth = m_gains[M][0] > 0 if m_gains[M][0] != 0 else m_gains[M][1] > 0 # last month has positive gain
+        maxyr = max(maxyr, len([x for x in m_gains[M] if x != 0]))
         # gain_str = " -> ".join([str(round(num, 1)) if num != 0 else '?' for num in m_gains[M]][::-1])
         # final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): {round(np.mean(m_gains[M]), 2)}%\tAll: ({gain_str})\n'
         final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): Mean @ {round(np.mean(m_gains[M]), 2)}%\tLow @ {round(np.min(m_gains[M]), 2)}\tHigh @ {round(np.max(m_gains[M]), 2)}\n'
@@ -94,7 +96,7 @@ def mo_analysis(m_gains, stockcode):
             wins.append(int(to_num[0])/int(to_num[1]) * 100)
 
     cur_vals = list(combo_mth["values"])
-    cur_vals.append(f'{stockcode},avg_win={round(np.mean(wins), 1)}%,max_win={round(np.max(wins), 1)}%')
+    cur_vals.append(f'{stockcode},avg_win={round(np.mean(wins), 1)}%,max_win={round(np.max(wins), 1)}%,years={maxyr}{"+"if maxyr == 10 else ""}')
     combo_mth["values"] = tuple(cur_vals)
     
     month_gain_details[stockcode] = final_out
@@ -554,7 +556,7 @@ month_frame.pack()
 txt_mth = tk.Label(month_frame, text="Monthly analysis: ")
 txt_mth.pack(side=tk.LEFT)
 
-combo_mth = ttk.Combobox(month_frame, state="readonly", values=[], width=40)
+combo_mth = ttk.Combobox(month_frame, state="readonly", values=[], width=50)
 combo_mth.pack(side=tk.LEFT)
 combo_mth.bind("<<ComboboxSelected>>", handle_month_analysis)
 combo_mth.set('Select one')
