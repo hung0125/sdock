@@ -362,6 +362,8 @@ def handle_first_row_button_click(index):
         output_table.delete(item)
     for item in output_table_f.get_children():
         output_table_f.delete(item)
+    for item in output_table_t.get_children():
+        output_table_t.delete(item)
     base_stock_anal(index, False)
 
 # Function to handle text input button click
@@ -372,6 +374,8 @@ def handle_custom_search(is_filter):
         output_table.delete(item)
     for item in output_table_f.get_children():
         output_table_f.delete(item)
+    for item in output_table_t.get_children():
+        output_table_t.delete(item)
     input_text = text_input.get()
     base_stock_anal(input_text, is_filter)
 
