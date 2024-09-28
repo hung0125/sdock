@@ -403,7 +403,7 @@ def handle_month_analysis(event):
     if not combo_mth.get(): return
     selected_value = combo_mth.get().split(',')
     
-    custom_messagebox(f"Monthly Gain Summary ({selected_value[0]}): By month - Average WR: {selected_value[1].split('=')[1]}, Max WR: {selected_value[2].split('=')[1]}%", month_gain_details[selected_value[0]], 12)
+    custom_messagebox(f"Monthly Gain Summary ({selected_value[0]}): By month - Average WR: {selected_value[1].split('=')[1]}, Max WR: {selected_value[2].split('=')[1]}", month_gain_details[selected_value[0]], 12)
 
 
 # Create the main window
