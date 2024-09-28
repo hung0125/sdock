@@ -85,8 +85,9 @@ def mo_analysis(m_gains, stockcode):
     wins = []
     for M in months:
         lth = m_gains[M][0] > 0 if m_gains[M][0] != 0 else m_gains[M][1] > 0
-        gain_str = " -> ".join([str(round(num, 1)) if num != 0 else '?' for num in m_gains[M]][::-1])
-        final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): {round(np.mean(m_gains[M]), 2)}%\tAll: ({gain_str})\n'
+        # gain_str = " -> ".join([str(round(num, 1)) if num != 0 else '?' for num in m_gains[M]][::-1])
+        # final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): {round(np.mean(m_gains[M]), 2)}%\tAll: ({gain_str})\n'
+        final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): Mean @ {round(np.mean(m_gains[M]), 2)}%\tLow @ {round(np.min(m_gains[M]), 2)}\tHigh @ {round(np.max(m_gains[M]), 2)}\n'
         
         to_num = m_gain_confd(m_gains[M])[:-1].split('/')
         if int(to_num[1]) > 0:
@@ -109,7 +110,7 @@ def m_gain_confd(gain_arr):
     total_count = arr.size
     return f'{positive_count}/{total_count}y'
 
-def base_stock_anal(stock_idx_or_name):
+def base_stock_anal(stock_idx_or_name, is_override_filter):
     global trade_details
 
     stock_c = stock_idx_or_name
@@ -130,10 +131,15 @@ def base_stock_anal(stock_idx_or_name):
         pass
 
     if not choice_isnum:
-        stocks.append([stock_c])
+        if is_override_filter:
+            filter_mode = True
+            output_table_f.pack()
+            output_table.pack_forget()
+        else:
+            output_table.pack()
+            output_table_f.pack_forget()
+        stocks.append(stock_c.split())
         stock_c = len(stocks) - 1
-        output_table.pack()
-        output_table_f.pack_forget()
 
 
     filter_list = []
@@ -303,7 +309,7 @@ def base_stock_anal(stock_idx_or_name):
             # progress
             pb['value'] += 1/len(stocks[stock_c]) * 100
         except:
-            prt("Error processing " + S)
+            prt('Error processing ' + S + '\n')
             pb['value'] += 1/len(stocks[stock_c]) * 100
     
     # do filter mode stuff
@@ -356,10 +362,10 @@ def handle_first_row_button_click(index):
         output_table.delete(item)
     for item in output_table_f.get_children():
         output_table_f.delete(item)
-    base_stock_anal(index)
+    base_stock_anal(index, False)
 
 # Function to handle text input button click
-def handle_single_search():
+def handle_custom_search(is_filter):
     clear_tmp()
     output_text.delete('1.0', 'end')
     for item in output_table.get_children():
@@ -367,7 +373,7 @@ def handle_single_search():
     for item in output_table_f.get_children():
         output_table_f.delete(item)
     input_text = text_input.get()
-    base_stock_anal(input_text)
+    base_stock_anal(input_text, is_filter)
 
 def handle_4th_row_button_click(index):
     prt(f"4th row button {index} clicked\n")
@@ -426,14 +432,16 @@ for r in range(nav_rows):
 second_row_frame = tk.Frame(root)
 second_row_frame.pack()
 
-text_widget_trade = tk.Label(second_row_frame, text="Search by code")
+text_widget_trade = tk.Label(second_row_frame, text="Search by code(s) (separate with spaces)")
 text_widget_trade.pack(side=tk.LEFT)
 
 text_input = tk.Entry(second_row_frame)
 text_input.pack(side=tk.LEFT)
 
-input_button = tk.Button(second_row_frame, text="GO",command=handle_single_search)
-input_button.pack(side=tk.LEFT, padx=10)
+input_button = tk.Button(second_row_frame, text="GO (detailed mode)",command= lambda: handle_custom_search(False))
+input_button.pack(side=tk.LEFT, padx=5)
+input_button = tk.Button(second_row_frame, text="GO (filter mode)",command= lambda: handle_custom_search(True))
+input_button.pack(side=tk.LEFT, padx=5)
 
 # Third row: text area for program output
 output_text = scrolledtext.ScrolledText(root, width=80, height=5)
