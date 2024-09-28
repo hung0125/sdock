@@ -92,7 +92,7 @@ def mo_analysis(m_gains, stockcode):
         maxyr = max(maxyr, len(gains_nonzero))
         # gain_str = " -> ".join([str(round(num, 1)) if num != 0 else '?' for num in m_gains[M]][::-1])
         # final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): {round(np.mean(m_gains[M]), 2)}%\tAll: ({gain_str})\n'
-        final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): Mean @ {round(np.mean(m_gains[M]), 2)}%\tLow @ {round(np.min(gains_nonzero), 2)}\tHigh @ {round(np.max(m_gains[M]), 2)}\n'
+        final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])})/({m_gain_confd(gains_nonzero[:5])}):\tMean @ {round(np.mean(m_gains[M]), 2)}%\tLow @ {round(np.min(gains_nonzero), 2)}\tHigh @ {round(np.max(m_gains[M]), 2)}\n'
         
         to_num = m_gain_confd(m_gains[M])[:-1].split('/')
         if int(to_num[1]) > 0:
