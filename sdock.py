@@ -118,6 +118,15 @@ def m_gain_confd(gain_arr):
 def base_stock_anal(stock_idx_or_name, is_override_filter):
     global trade_details
 
+    # validation
+    try:
+        if input_year.get():
+            int(input_year.get())
+    except:
+        prt('Invalid trade data year')
+        return
+    # validation
+
     stock_c = stock_idx_or_name
     choice_isnum = False
     filter_mode = False
@@ -155,7 +164,13 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
             sleep(0.25)
             cnt += 1
             root.update_idletasks()
-            resp = rq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{S}?range=1y&interval=1d&indicators=quote&includeTimestamps=true&corsDomain=finance.yahoo.com", headers=header)
+            resp = None
+            if input_year.get():
+                p1 = int(datetime(int(input_year.get()), 1, 1).timestamp())
+                p2 = int(datetime(int(input_year.get()), 12, 31).timestamp())
+                resp = rq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{S}?period1={p1}&period2={p2}&interval=1d&indicators=quote&includeTimestamps=true&corsDomain=finance.yahoo.com", headers=header)
+            else:
+                resp = rq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{S}?range=1y&interval=1d&indicators=quote&includeTimestamps=true&corsDomain=finance.yahoo.com", headers=header)
             resp_m = rq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{S}?range=10y&interval=1mo&indicators=quote&includeTimestamps=true&corsDomain=finance.yahoo.com", headers=header)
             dat = loads(resp.text)
             dat_m = loads(resp_m.text)['chart']['result'][0]
@@ -421,12 +436,22 @@ root = tk.Tk()
 root.title("Sdock - Your Trading Tenga💦")
 root.geometry("800x650")
 
-# First row: dynamically generated buttons based on file contents
+# Time setting bar
+time_setting_frame = tk.Frame(root)
+time_setting_frame.pack()
+
+txt_trade_year = tk.Label(time_setting_frame, text="Trade details year (default: up to now) ")
+txt_trade_year.pack(side=tk.LEFT)
+input_year = tk.Entry(time_setting_frame, width=4)
+input_year.pack(side=tk.LEFT)
+
+# Progress bar
 pb = ttk.Progressbar(root, orient='horizontal', mode='determinate', length=560)
 pb.pack()
 
 nav_rows = (len(s_button_names) + 4) // 5
 
+# Dynamically generated buttons based on file contents
 for r in range(nav_rows):
     nav_frame = ttk.Frame(root)
     nav_frame.pack()
