@@ -197,7 +197,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                 cur_trades = []
                 wons = 0
                 losses = 0
-                gain_p = 0
+                cost_test = 100
                 buy_intervals = [] # days
                 last_buy_ts = dat['chart']['result'][0]['timestamp'][0]
                 last_sell_ts = -1
@@ -227,7 +227,8 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                             wons += 1
                         else:
                             losses += 1
-                        gain_p += change
+                        # gain_p += change
+                        cost_test *= 1 + change/100
                         
                         tx['buy'] = False
                         in_buy = False
@@ -246,7 +247,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                 emas_trades.append({'trades': cur_trades, 
                                     'wons': wons, 
                                     'losses': losses, 
-                                    'gainp': gain_p, 
+                                    'gainp': cost_test, 
                                     'avgbuydays': int(np.mean(np.array(buy_intervals))),
                                     'lastbuyts': [last_buy_ts, last_sell_ts]})
             
@@ -467,7 +468,7 @@ output_table.pack(side=tk.LEFT)
 output_table.heading("stock", text="Stock")
 output_table.heading("emad", text="EMA Days")
 output_table.heading("winrate", text="Win Rate")
-output_table.heading("gainp", text="Gain %")
+output_table.heading("gainp", text="$100 Test")
 output_table.heading("lastema", text="Last EMA $")
 output_table.heading("avgbuyintv", text="Avg Buy Intv")
 output_table.heading("lasttrade", text="Last Trade")
@@ -489,7 +490,7 @@ output_table_f.pack(side=tk.LEFT)
 output_table_f.heading("stock", text="Stock")
 output_table_f.heading("emad", text="EMA Days")
 output_table_f.heading("winrate", text="Win Rate")
-output_table_f.heading("gainp", text="Gain %")
+output_table_f.heading("gainp", text="$100 Test")
 output_table_f.heading("lastema", text="Last EMA $")
 output_table_f.heading("pricenow", text="Price Now")
 output_table_f.heading("lasttrade", text="Last Trade")
