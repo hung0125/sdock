@@ -92,14 +92,23 @@ def mo_analysis(m_gains, stockcode):
         maxyr = max(maxyr, len(gains_nonzero))
         # gain_str = " -> ".join([str(round(num, 1)) if num != 0 else '?' for num in m_gains[M]][::-1])
         # final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])}): {round(np.mean(m_gains[M]), 2)}%\tAll: ({gain_str})\n'
-        final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])})/({m_gain_confd(gains_nonzero[:5])}):\tMean @ {round(np.mean(m_gains[M]), 2)}%\tLow @ {round(np.min(gains_nonzero), 2)}\tHigh @ {round(np.max(m_gains[M]), 2)}\n'
+        num_win_20 = m_gain_confd(m_gains[M])[:-1].split('/')
+        num_win_10 = m_gain_confd(m_gains[M][:10])[:-1].split('/')
+        num_win_5 = m_gain_confd(m_gains[M][:5])[:-1].split('/')
+        pwinr_20 = round(int(num_win_20[0])/int(num_win_20[1]) * 100, 1) if int(num_win_20[1]) > 0 else 0
+        pwinr_10 = round(int(num_win_10[0])/int(num_win_10[1]) * 100, 1) if int(num_win_10[1]) > 0 else 0
+        pwinr_5 = round(int(num_win_5[0])/int(num_win_5[1]) * 100, 1) if int(num_win_5[1]) > 0 else 0
+        tmp_idx_use = 10 if m_gains[M][0] != 0 else 9
+        gain_mean = round(np.mean(gains_nonzero[:tmp_idx_use]), 2)
+        gain_low = round(np.min(gains_nonzero[:tmp_idx_use]), 2)
+        gain_high = round(np.max(gains_nonzero[:tmp_idx_use]), 2)
+        final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])})[{pwinr_20}%]\t({m_gain_confd(m_gains[M][:10])})[{pwinr_10}%]\t({m_gain_confd(m_gains[M][:5])})[{pwinr_5}%]:\n[10y] Mean @ {gain_mean}%\tLow @ {gain_low}\tHigh @ {gain_high}\n{"-"*80}\n'
         
-        to_num = m_gain_confd(m_gains[M])[:-1].split('/')
-        if int(to_num[1]) > 0:
-            wins.append(int(to_num[0])/int(to_num[1]) * 100)
+        if pwinr_10 > 0:
+            wins.append(pwinr_10)
 
     cur_vals = list(combo_mth["values"])
-    cur_vals.append(f'{stockcode},avg_win={round(np.mean(wins), 1)}%,max_win={round(np.max(wins), 1)}%,years={maxyr}{"+"if maxyr == 10 else ""}')
+    cur_vals.append(f'{stockcode},avg_win_10y={round(np.mean(wins), 1)}%,max_win_10y={round(np.max(wins), 1)}%,all_years={maxyr}{"+"if maxyr == 20 else ""}')
     combo_mth["values"] = tuple(cur_vals)
     
     month_gain_details[stockcode] = final_out
@@ -171,7 +180,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                 resp = rq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{S}?period1={p1}&period2={p2}&interval=1d&indicators=quote&includeTimestamps=true&corsDomain=finance.yahoo.com", headers=header)
             else:
                 resp = rq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{S}?range=1y&interval=1d&indicators=quote&includeTimestamps=true&corsDomain=finance.yahoo.com", headers=header)
-            resp_m = rq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{S}?range=10y&interval=1mo&indicators=quote&includeTimestamps=true&corsDomain=finance.yahoo.com", headers=header)
+            resp_m = rq.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{S}?range=20y&interval=1mo&indicators=quote&includeTimestamps=true&corsDomain=finance.yahoo.com", headers=header)
             dat = loads(resp.text)
             dat_m = loads(resp_m.text)['chart']['result'][0]
 
@@ -184,7 +193,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
             months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
             m_gains = {}
             for M in months:
-                m_gains[M] = [0] * 10
+                m_gains[M] = [0] * 20
             
             for i in range(len(opens_m)):
                 p_op = opens_m[i]
@@ -193,7 +202,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                 # if ts[1] == 'Sep':
                 #     print(f'[{ts[1]}]{int(date_now[2])}-{int(ts[2])}-1 -> {p_op}, {p_cl}, {pchange(p_cl, p_op)}')
                 use_idx = int(date_now[2])-int(ts[2])
-                if use_idx == 10:
+                if use_idx == 20:
                     use_idx -= 1
                 m_gains[ts[1]][use_idx] += pchange(p_cl, p_op)
 
@@ -298,8 +307,10 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
             if filter_mode:
                 use_idx = 0 if winr_ma5 >= winr_ma10 else 1
                 reg_p = dat['chart']['result'][0]['meta']['regularMarketPrice']
-                month_now = m_gains[date_now[1]]
-                month_nxt = m_gains[nxt_mth[date_now[1]]]
+                month_now = [x for x in m_gains[date_now[1]] if x != 0] or [0]
+                month_now = month_now[:9 if m_gains[date_now[1]][0] == 0 else 10]
+                month_nxt = [x for x in m_gains[nxt_mth[date_now[1]]] if x != 0] or [0]
+                month_nxt = month_nxt[:9 if m_gains[nxt_mth[date_now[1]]][0] == 0 else 10]
                 res[use_idx][0] = S
                 res[use_idx][5] = f'{reg_p} [{round(pchange(reg_p, res[use_idx][4]), 2)}%]'
                 res[use_idx].append(f'{round(np.mean(month_now), 1)}({m_gain_confd(month_now)})->{round(np.mean([month_nxt]), 1)}({m_gain_confd(month_nxt)})')
@@ -315,7 +326,8 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
             for k in range(5):
                 for T in emas_trades[k]['trades']:
                     tmp_date = ts2date(T["date"])
-                    tmp_mth_gain = m_gains[tmp_date.split()[1]]
+                    tmp_mth_gain = [x for x in m_gains[tmp_date.split()[1]] if x != 0] or [0]
+                    tmp_mth_gain = tmp_mth_gain[:9 if m_gains[tmp_date.split()[1]][0] == 0 else 10]
                     trade_details.append([
                         S,
                         emas_days[k],
@@ -585,7 +597,7 @@ month_frame.pack()
 txt_mth = tk.Label(month_frame, text="Monthly analysis: ")
 txt_mth.pack(side=tk.LEFT)
 
-combo_mth = ttk.Combobox(month_frame, state="readonly", values=[], width=50)
+combo_mth = ttk.Combobox(month_frame, state="readonly", values=[], width=55)
 combo_mth.pack(side=tk.LEFT)
 combo_mth.bind("<<ComboboxSelected>>", handle_month_analysis)
 combo_mth.set('Select one')
