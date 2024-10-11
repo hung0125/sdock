@@ -401,6 +401,8 @@ def custom_messagebox(title, message, font_size):
         
         canvas.create_rectangle(x1, y1, x2, y2, fill="green")
         canvas.create_text((x1 + x2) // 2, y2 + 15, text=months[i])
+        for j in range(1,11):
+            canvas.create_text((x1 + x2) // 2, (j*8-2), text='_____')
 
     # Create an OK button to close the message box
     ok_button = tk.Button(top, text="OK", command=top.destroy)
