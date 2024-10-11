@@ -381,11 +381,11 @@ def custom_messagebox(title, message, font_size):
     
     # Create a label with the custom font
     label = tk.Label(top, text=message['txt'], font=custom_font, anchor='w', justify='left')
-    label.pack(padx=20, pady=20)
+    label.pack(padx=20, pady=5)
 
 
-    label_bar = tk.Label(top, text='|10 Years in Chart|', font=custom_font, anchor='w', justify='center')
-    label_bar.pack(padx=20, pady=20)
+    label_bar = tk.Label(top, text='10 Years in Chart', font=custom_font, anchor='w', justify='center')
+    label_bar.pack(padx=20, pady=3)
 
     canvas = tk.Canvas(top, width=600, height=120, border=5, relief='ridge')
     canvas.pack()
