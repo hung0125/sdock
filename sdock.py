@@ -111,7 +111,7 @@ def mo_analysis(m_gains, stockcode):
     cur_vals.append(f'{stockcode},avg_win_10y={round(np.mean(wins), 1)}%,max_win_10y={round(np.max(wins), 1)}%,all_years={maxyr}{"+"if maxyr == 20 else ""}')
     combo_mth["values"] = tuple(cur_vals)
     
-    month_gain_details[stockcode] = final_out
+    month_gain_details[stockcode] = {'txt': final_out, 'bar': wins}
 
 def m_gain_confd(gain_arr):
     clean_arr = []
@@ -380,12 +380,33 @@ def custom_messagebox(title, message, font_size):
     custom_font = font.Font(size=font_size)
     
     # Create a label with the custom font
-    label = tk.Label(top, text=message, font=custom_font, anchor='w', justify='left')
+    label = tk.Label(top, text=message['txt'], font=custom_font, anchor='w', justify='left')
     label.pack(padx=20, pady=20)
-    
+
+
+    label_bar = tk.Label(top, text='|10 Years in Chart|', font=custom_font, anchor='w', justify='center')
+    label_bar.pack(padx=20, pady=20)
+
+    canvas = tk.Canvas(top, width=600, height=120, border=5, relief='ridge')
+    canvas.pack()
+
+    wrs = message['bar']
+    rect_width = 30
+    for i in range(12):
+        rect_height = int(80 * (wrs[i]/100))
+        x1 = (i+3) * rect_width + 10
+        y1 = 10 + (80-rect_height)
+        x2 = x1 + rect_width
+        y2 = y1 + rect_height
+        
+        canvas.create_rectangle(x1, y1, x2, y2, fill="green")
+        canvas.create_text((x1 + x2) // 2, y2 + 15, text=months[i])
+
     # Create an OK button to close the message box
     ok_button = tk.Button(top, text="OK", command=top.destroy)
     ok_button.pack(pady=10)
+
+
 
 # Function to handle button click in the first row
 def handle_first_row_button_click(index):
