@@ -11,6 +11,7 @@ from tabulate import tabulate
 # tmp storage ------------------------------------------------
 trade_details = []
 month_gain_details = {} # key = stock code
+month_gain_options_orig = []
 templateScript = b'''
 General tech:GOOG MSFT META AMZN
 AI:SMCI NVDA MU AVGO
@@ -38,6 +39,7 @@ header = {
             'Connection': 'keep-alive',
         }
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+sort_opts = ['query seq', 'average winrate', 'max winrate']
 nxt_mth = {}
 for i in range(len(months)):
     nxt_mth[months[i]] = months[(i + 1) % 12]
@@ -108,9 +110,11 @@ def mo_analysis(m_gains, stockcode):
             wins.append(pwinr_10)
 
     cur_vals = list(combo_mth["values"])
-    cur_vals.append(f'{stockcode},avg_win_10y={round(np.mean(wins), 1)}%,max_win_10y={round(np.max(wins), 1)}%,all_years={maxyr}{"+"if maxyr == 20 else ""}')
+    opt_name = f'{stockcode},avg_win_10y={round(np.mean(wins), 1)}%,max_win_10y={round(np.max(wins), 1)}%,all_years={maxyr}{"+"if maxyr == 20 else ""}'
+    cur_vals.append(opt_name)
+    month_gain_options_orig.append(opt_name)
     combo_mth["values"] = tuple(cur_vals)
-    
+
     month_gain_details[stockcode] = {'txt': final_out, 'bar': wins}
 
 def m_gain_confd(gain_arr):
@@ -358,11 +362,13 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
         input_stock.insert(0, stocks[stock_c][0])
 
 def clear_tmp():
-    global trade_details, month_gain_details
+    global trade_details, month_gain_details, month_gain_options_orig
     trade_details = []
     month_gain_details = {}
+    month_gain_options_orig = []
     combo_mth['values'] = []
     combo_mth.set('Select one')
+    combo_sort.set(sort_opts[0])
     pb['value'] = 0
     input_stock.delete(0, tk.END)
 
@@ -465,6 +471,17 @@ def handle_month_analysis(event):
     
     custom_messagebox(f"Monthly Gain Summary ({selected_value[0]}): By month - Average WR: {selected_value[1].split('=')[1]}, Max WR: {selected_value[2].split('=')[1]}", month_gain_details[selected_value[0]], 12)
 
+def handle_sorting(event):
+    if not combo_sort.get(): return
+    if combo_sort.get() == sort_opts[0]:
+        combo_mth["values"] = tuple(month_gain_options_orig)
+    else:
+        new_list = []
+        for O in month_gain_options_orig:
+            new_list.append(O)
+        srt_idx = 1 if combo_sort.get() == sort_opts[1] else 2
+        new_list.sort(key=lambda rcd: float(rcd.split(',')[srt_idx].split('=')[1][:-1]), reverse=True)
+        combo_mth["values"] = tuple(new_list)
 
 # Create the main window
 root = tk.Tk()
@@ -624,6 +641,15 @@ combo_mth = ttk.Combobox(month_frame, state="readonly", values=[], width=55)
 combo_mth.pack(side=tk.LEFT)
 combo_mth.bind("<<ComboboxSelected>>", handle_month_analysis)
 combo_mth.set('Select one')
+
+txt_sort = tk.Label(month_frame, text="Sort by: ")
+txt_sort.pack(side=tk.LEFT, padx=5)
+
+combo_sort = ttk.Combobox(month_frame, state="readonly", values=sort_opts, width=15)
+combo_sort.pack(side=tk.LEFT)
+combo_sort.bind("<<ComboboxSelected>>", handle_sorting)
+combo_sort.set(sort_opts[0])
+
 
 # Run the main loop
 root.mainloop()
