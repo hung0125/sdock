@@ -85,6 +85,7 @@ def getBaseTx(dat, emas_line, idx):
 def mo_analysis(m_gains, stockcode):
     final_out = ''
     wins = []
+    wins_0 = []
     maxyr = 0
     for M in months:
         lth = m_gains[M][0] > 0 if m_gains[M][0] != 0 else m_gains[M][1] > 0 # last month has positive gain
@@ -104,10 +105,11 @@ def mo_analysis(m_gains, stockcode):
         gain_mean = round(np.mean(gains_nonzero[:tmp_idx_use]), 2)
         gain_low = round(np.min(gains_nonzero[:tmp_idx_use]), 2)
         gain_high = round(np.max(gains_nonzero[:tmp_idx_use]), 2)
-        final_out += f'{M}{"*" if lth else ""}\t({m_gain_confd(m_gains[M])})[{pwinr_20}%]\t({m_gain_confd(m_gains[M][:10])})[{pwinr_10}%]\t({m_gain_confd(m_gains[M][:5])})[{pwinr_5}%]:\n[10y] Mean @ {gain_mean}%\tLow @ {gain_low}\tHigh @ {gain_high}\n{"-"*80}\n'
+        final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])})[{pwinr_20}%]\t({m_gain_confd(m_gains[M][:10])})[{pwinr_10}%]\t({m_gain_confd(m_gains[M][:5])})[{pwinr_5}%]:\n[10y] Mean @ {gain_mean}%\tLow @ {gain_low}\tHigh @ {gain_high}\n{"-"*80}\n'
         
         if pwinr_10 > 0:
             wins.append(pwinr_10)
+        wins_0.append(pwinr_10)
 
     cur_vals = list(combo_mth["values"])
     opt_name = f'{stockcode},avg_win_10y={round(np.mean(wins), 1)}%,max_win_10y={round(np.max(wins), 1)}%,all_years={maxyr}{"+"if maxyr == 20 else ""}'
@@ -115,7 +117,7 @@ def mo_analysis(m_gains, stockcode):
     month_gain_options_orig.append(opt_name)
     combo_mth["values"] = tuple(cur_vals)
 
-    month_gain_details[stockcode] = {'txt': final_out, 'bar': wins}
+    month_gain_details[stockcode] = {'txt': final_out, 'bar': wins_0}
 
 def m_gain_confd(gain_arr):
     clean_arr = []
