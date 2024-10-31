@@ -7,3 +7,9 @@
 6. 近期沒有負面消息
 7. 低獲利籌碼
 8. 市盈率
+9. ^無視以上指引^
+10. 透過 https://www.investing.com/earnings-calendar/ 找出月內倒數第二個星期的標的
+11. 盡可能輸入股票代碼 (filter)
+12. 找出last trade為當前日子 + 下月上漲概率90-100%的標的
+13. 突破last EMA時買入, 設定止損為last EMA
+14. 沒有合適標的, 轉投TBIL
