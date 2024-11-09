@@ -102,10 +102,10 @@ def mo_analysis(m_gains, stockcode):
         pwinr_10 = round(int(num_win_10[0])/int(num_win_10[1]) * 100, 1) if int(num_win_10[1]) > 0 else 0
         pwinr_5 = round(int(num_win_5[0])/int(num_win_5[1]) * 100, 1) if int(num_win_5[1]) > 0 else 0
         tmp_idx_use = 10 if m_gains[M][0] != 0 else 9
-        gain_mean = round(np.mean(gains_nonzero[:tmp_idx_use]), 2)
+        gain_target = round(min(np.median(gains_nonzero[:tmp_idx_use]), np.mean(gains_nonzero[:tmp_idx_use])), 2)
         gain_low = round(np.min(gains_nonzero[:tmp_idx_use]), 2)
         gain_high = round(np.max(gains_nonzero[:tmp_idx_use]), 2)
-        final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])})[{pwinr_20}%]\t({m_gain_confd(m_gains[M][:10])})[{pwinr_10}%]\t({m_gain_confd(m_gains[M][:5])})[{pwinr_5}%]:\n[10y] Mean @ {gain_mean}%\tLow @ {gain_low}\tHigh @ {gain_high}\n{"-"*80}\n'
+        final_out += f'{M}{'*' if lth else ''}\t({m_gain_confd(m_gains[M])})[{pwinr_20}%]\t({m_gain_confd(m_gains[M][:10])})[{pwinr_10}%]\t({m_gain_confd(m_gains[M][:5])})[{pwinr_5}%]:\n[10y] Target @ {gain_target}%\tLow @ {gain_low}\tHigh @ {gain_high}\n{"-"*80}\n'
         
         if pwinr_10 > 0:
             wins.append(pwinr_10)
