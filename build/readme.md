@@ -1,15 +1,1 @@
-心法:
-1. **避月內財報**
-2. 非黃昏產業, 大宗商品
-3. 旺季
-4. 接近支撐點 (趨勢為盤整)
-5. 強力推薦股票
-6. 近期沒有負面消息
-7. 低獲利籌碼
-8. 市盈率
-9. ^無視以上指引^
-10. 透過 https://www.investing.com/earnings-calendar/ 找出月內倒數第二個星期的標的
-11. 盡可能輸入股票代碼 (filter)
-12. 找出last trade為當前日子 + 下月上漲概率90-100%的標的
-13. 突破last EMA時買入, 設定止損為last EMA
-14. 沒有合適標的 (大前提: 上漲概率), 下月轉投BIL
+財報看好, 月內上漲 (>= 9/10), tradingview指標看好  (swing high low support, Lorentzian classification), ALL TIME趨勢線性向上, 籌碼分佈沒有跳空
