@@ -135,6 +135,7 @@ def m_gain_confd(gain_arr):
 
 def base_stock_anal(stock_idx_or_name, is_override_filter):
     global trade_details
+    ret_data = None
 
     # validation
     try:
@@ -221,6 +222,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
             emas_days = [5, 10, 20, 30, 50]
             emas_line = []
             emas_trades = []
+            cost_rets_till_now = []
 
             for ED in emas_days:
                 windows = closes[:ED] # closed price in first ED days
@@ -231,11 +233,17 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                 wons = 0
                 losses = 0
                 cost_test = 100
+                marked_cost_till_now = False
                 buy_intervals = [] # days
                 last_buy_ts = dat['chart']['result'][0]['timestamp'][0]
                 last_sell_ts = -1
                 
                 for i in range(10, len(closes)): # day 11, really analyze
+                    ts_cur = dat['chart']['result'][0]['timestamp'][i]
+                    if not marked_cost_till_now and int(ts_cur % 31536000) >= int(time()) % 31536000:
+                        marked_cost_till_now = True
+                        cost_rets_till_now.append(cost_test)
+
                     # buy signal
                     if closes[i] >= emas_line[-1][-1] and not in_buy:
                         tx = getBaseTx(dat, emas_line, i)
@@ -243,7 +251,6 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                         tx['buy'] = True
                         in_buy = True
 
-                        ts_cur = dat['chart']['result'][0]['timestamp'][i]
                         buy_intervals.append(calcDays(ts_cur, last_buy_ts))
                         last_buy_ts = ts_cur
                         last_sell_ts = -1
@@ -265,9 +272,9 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                         
                         tx['buy'] = False
                         in_buy = False
-                        cur_ts = dat['chart']['result'][0]['timestamp'][i]
-                        if cur_ts >= last_buy_ts:
-                            last_sell_ts = cur_ts
+
+                        if ts_cur >= last_buy_ts:
+                            last_sell_ts = ts_cur
                         cur_trades.append(tx)
                         
 
@@ -275,7 +282,9 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                     windows.append(closes[i])
                     # add ema value
                     emas_line[-1].append(np.mean(np.array(windows)))
-                    
+
+                if not marked_cost_till_now:
+                    cost_rets_till_now.append(cost_test)
 
                 emas_trades.append({'trades': cur_trades, 
                                     'wons': wons, 
@@ -283,7 +292,8 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                                     'gainp': cost_test, 
                                     'avgbuydays': int(np.mean(np.array(buy_intervals))),
                                     'lastbuyts': [last_buy_ts, last_sell_ts]})
-            
+            # for earning ability report
+            ret_data = {'costs_100': round(np.mean(cost_rets_till_now), 2)}
 
             if not filter_mode:
                 prt(f"Results - {S} (${dat['chart']['result'][0]['meta']['regularMarketPrice']}) From {ts2date(dat['chart']['result'][0]['timestamp'][0])} to {ts2date(dat['chart']['result'][0]['timestamp'][-1])}:\n")
@@ -291,14 +301,12 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
             res = [] # summary table
             winr_ma5 = 0
             winr_ma10 = 0
-            
             for i in range(len(emas_trades)):
                 wr = emas_trades[i]['wons']/(emas_trades[i]['wons']+emas_trades[i]['losses'])*100
                 if emas_days[i] == 5:
                     winr_ma5 = wr
                 elif emas_days[i] == 10:
                     winr_ma10 = wr
-                
                 data_tup = (
                     S,
                     emas_days[i],
@@ -310,6 +318,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                 )
                 output_table.insert("", "end", values=data_tup)
                 res.append(list(data_tup))
+
 
             output_table.insert("", "end", values=('_' * 5,) * 8)
 
@@ -350,6 +359,10 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
 
             # progress
             pb['value'] += 1/len(stocks[stock_c]) * 100
+
+            # return if has any data
+            if ret_data:
+                return ret_data
         except:
             prt('Error processing ' + S + '\n')
             pb['value'] += 1/len(stocks[stock_c]) * 100
@@ -365,6 +378,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
     if len(stocks[stock_c]) == 1:
         input_stock.delete(0, tk.END)
         input_stock.insert(0, stocks[stock_c][0])
+        
 
 def clear_tmp():
     global trade_details, month_gain_details, month_gain_options_orig
@@ -445,6 +459,37 @@ def handle_custom_search(is_filter):
         output_table_t.delete(item)
     input_text = text_input.get()
     base_stock_anal(input_text, is_filter)
+
+def handle_earning_ability():
+    clear_tmp()
+    output_text.delete('1.0', 'end')
+    for item in output_table.get_children():
+        output_table.delete(item)
+    for item in output_table_f.get_children():
+        output_table_f.delete(item)
+    for item in output_table_t.get_children():
+        output_table_t.delete(item)
+    
+    input_text = text_input.get()
+    test_year = datetime.now().year - 9
+    data = []
+    for _ in range(10):
+        input_year.delete(0, tk.END)
+        input_year.insert(0, test_year)
+        result = base_stock_anal(input_text, False)
+        if result:
+            data.append([test_year, result['costs_100']])
+        test_year += 1
+
+    data.sort(key=lambda wr: wr[1], reverse=True)
+
+    text = 'The average return of investing $100 by MA strategy\n(each year up till now)\n'
+    for i in range(1, 11):
+        if i == len(data): break
+        text += f'#{i}: {data[i-1][0]} -> ${data[i-1][1]}\n'
+    messagebox.showinfo(f'***Annual Earning Ability Ranking - {input_text}***', text)
+
+
 
 def handle_4th_row_button_click(index):
     prt(f"4th row button {index} clicked\n")
@@ -533,6 +578,8 @@ text_input.pack(side=tk.LEFT)
 input_button = tk.Button(second_row_frame, text="GO (detailed mode)",command= lambda: handle_custom_search(False))
 input_button.pack(side=tk.LEFT, padx=5)
 input_button = tk.Button(second_row_frame, text="GO (filter mode)",command= lambda: handle_custom_search(True))
+input_button.pack(side=tk.LEFT, padx=5)
+input_button = tk.Button(second_row_frame, text="GO (earning ability report)",command= lambda: handle_earning_ability())
 input_button.pack(side=tk.LEFT, padx=5)
 
 # Third row: text area for program output
