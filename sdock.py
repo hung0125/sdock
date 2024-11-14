@@ -359,10 +359,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
 
             # progress
             pb['value'] += 1/len(stocks[stock_c]) * 100
-
-            # return if has any data
-            if ret_data:
-                return ret_data
+   
         except:
             prt('Error processing ' + S + '\n')
             pb['value'] += 1/len(stocks[stock_c]) * 100
@@ -378,6 +375,9 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
     if len(stocks[stock_c]) == 1:
         input_stock.delete(0, tk.END)
         input_stock.insert(0, stocks[stock_c][0])
+    
+    # return if has any data
+    return ret_data
         
 
 def clear_tmp():
@@ -461,6 +461,10 @@ def handle_custom_search(is_filter):
     base_stock_anal(input_text, is_filter)
 
 def handle_earning_ability():
+    input_text = text_input.get().strip()
+    if ' ' in input_text:
+        messagebox.showerror("Bad Input", "No multiple stocks allowed")
+        return
     clear_tmp()
     output_text.delete('1.0', 'end')
     for item in output_table.get_children():
@@ -470,7 +474,6 @@ def handle_earning_ability():
     for item in output_table_t.get_children():
         output_table_t.delete(item)
     
-    input_text = text_input.get()
     test_year = datetime.now().year - 9
     data = []
     for _ in range(10):
