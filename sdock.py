@@ -485,7 +485,7 @@ def handle_earning_ability():
 
     text = 'The average return of investing $100 by MA strategy\n(each year up till now)\n'
     for i in range(1, 11):
-        if i == len(data): break
+        if i > len(data): break
         text += f'#{i}: {data[i-1][0]} -> ${data[i-1][1]}\n'
     messagebox.showinfo(f'***Annual Earning Ability Ranking - {input_text}***', text)
 
