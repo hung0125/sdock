@@ -484,12 +484,27 @@ def handle_earning_ability():
             data.append([test_year, result['costs_100']])
         test_year += 1
 
-    data.sort(key=lambda wr: wr[1], reverse=True)
-
+    # Why MA but not annual open close? TRICKEY STOCKS HAS NO REFERENCE VALUE
     text = 'The average return of investing $100 by MA strategy\n(each year up till now)\n'
+
     for i in range(1, 11):
         if i > len(data): break
-        text += f'#{i}: {data[i-1][0]} -> ${data[i-1][1]}\n'
+        text += f'{str(data[i-1][0])[2:]}({round(pchange(data[i-1][1], 100), 1)}%)'
+        if i < len(data): text += '->'
+    
+    text += '\n'
+
+    data.sort(key=lambda wr: wr[1], reverse=True)
+    nums = []
+    for i in range(1, 11):
+        if i > len(data): break
+        nums.append(data[i-1][1])
+        if datetime.now().year != int(data[i-1][0]):
+            text += f'#{i}: {data[i-1][0]} -> ${data[i-1][1]}\n'
+        else:
+            text += f'#{i}: *{data[i-1][0]}* -> ${data[i-1][1]}\n'
+
+    text += f'\nStandard deviation (stability): {round(np.std(nums), 2)}'
     messagebox.showinfo(f'***Annual Earning Ability Ranking - {input_text}***', text)
 
 
