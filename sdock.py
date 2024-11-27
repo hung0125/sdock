@@ -85,6 +85,15 @@ def getBaseTx(dat, emas_line, idx):
             'price': 0,
             'ema': emas_line[-1][-1]}
 
+def passedBounceTest(cur_price, low_pt):
+    if low_pt == 99999: return True
+    try:
+        if float(input_bounce.get()) > 0:
+            return (cur_price - low_pt) / low_pt * 100 >= float(input_bounce.get())
+        return True
+    except:
+        return True
+
 def mo_analysis(m_gains, stockcode):
     final_out = ''
     wins = []
@@ -233,6 +242,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                 wons = 0
                 losses = 0
                 cost_test = 100
+                low_pt_b4_buy = 99999
                 marked_cost_till_now = False
                 buy_intervals = [] # days
                 last_buy_ts = dat['chart']['result'][0]['timestamp'][0]
@@ -245,7 +255,8 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                         cost_rets_till_now.append(cost_test)
 
                     # buy signal
-                    if closes[i] >= emas_line[-1][-1] and not in_buy:
+                    if closes[i] >= emas_line[-1][-1] and passedBounceTest(closes[i], low_pt_b4_buy) and not in_buy:
+                        # update buy status and time
                         tx = getBaseTx(dat, emas_line, i)
                         tx['price'] = closes[i]
                         tx['buy'] = True
@@ -255,14 +266,20 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                         last_buy_ts = ts_cur
                         last_sell_ts = -1
                         cur_trades.append(tx)
+
+                        # reset low point
+                        low_pt_b4_buy = 99999
                     # sell signal
                     if closes[i] < emas_line[-1][-1] and in_buy and len(cur_trades) > 0:
+                        # set price
                         tx = getBaseTx(dat, emas_line, i)
                         tx['price'] = closes[i]
                         
+                        # calculate changes
                         change = pchange(closes[i], cur_trades[-1]['price'])
                         tx['gain'] = round(change, 2)
                         
+                        # determine gained or not
                         if change > 0:
                             wons += 1
                         else:
@@ -270,6 +287,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                         # gain_p += change
                         cost_test *= 1 + change/100
                         
+                        # update buy status and sold time
                         tx['buy'] = False
                         in_buy = False
 
@@ -277,6 +295,8 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                             last_sell_ts = ts_cur
                         cur_trades.append(tx)
                         
+                        # update low point
+                        low_pt_b4_buy = min(low_pt_b4_buy, closes[i])
 
                     windows.pop(0)
                     windows.append(closes[i])
@@ -303,6 +323,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
             winr_ma10 = 0
             for i in range(len(emas_trades)):
                 wr = emas_trades[i]['wons']/(emas_trades[i]['wons']+emas_trades[i]['losses'])*100
+                reg_p = dat['chart']['result'][0]['meta']['regularMarketPrice']
                 if emas_days[i] == 5:
                     winr_ma5 = wr
                 elif emas_days[i] == 10:
@@ -312,7 +333,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                     emas_days[i],
                     f"{emas_trades[i]['wons']}/{emas_trades[i]['losses']} [{round(wr, 2)}%]",
                     round(emas_trades[i]['gainp'], 2),
-                    round(emas_line[i][-1], 2),
+                    f'{round(emas_line[i][-1], 2)} [{round(pchange(reg_p, emas_line[i][-1]), 2)}%]',
                     str(emas_trades[i]['avgbuydays']) + ' days',
                     ts2date(emas_trades[i]['lastbuyts'][0]) + ('-' + ts2date(emas_trades[i]['lastbuyts'][1]) if emas_trades[i]['lastbuyts'][1] > 0 else '')
                 )
@@ -330,7 +351,7 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
                 month_nxt = [x for x in m_gains[nxt_mth[date_now[1]]] if x != 0] or [0]
                 month_nxt = month_nxt[:9 if m_gains[nxt_mth[date_now[1]]][0] == 0 else 10]
                 res[use_idx][0] = S
-                res[use_idx][5] = f'{reg_p} [{round(pchange(reg_p, res[use_idx][4]), 2)}%]'
+                res[use_idx][5] = f'{reg_p} [{round(pchange(reg_p, float(str(res[use_idx][4]).split()[0])), 2)}%]'
                 res[use_idx].append(f'{round(findTargetP(month_now), 1)}({m_gain_confd(month_now)})->{round(findTargetP(month_nxt), 1)}({m_gain_confd(month_nxt)})')
                 res[use_idx].append(emas_trades[use_idx]['lastbuyts'][0])
                 filter_list.append(res[use_idx])
@@ -557,13 +578,18 @@ root.title("Sdock - Your Trading Tenga💦")
 root.geometry("800x650")
 
 # Time setting bar
-time_setting_frame = tk.Frame(root)
-time_setting_frame.pack()
+basic_setting_frame = tk.Frame(root)
+basic_setting_frame.pack()
 
-txt_trade_year = tk.Label(time_setting_frame, text="Trade details year (default: up to now) ")
+txt_trade_year = tk.Label(basic_setting_frame, text="Trade details year (default: up to now) ")
 txt_trade_year.pack(side=tk.LEFT)
-input_year = tk.Entry(time_setting_frame, width=4)
+input_year = tk.Entry(basic_setting_frame, width=4)
 input_year.pack(side=tk.LEFT)
+
+txt_bounce = tk.Label(basic_setting_frame, text="Bounce rate from low point (%): ")
+txt_bounce.pack(side=tk.LEFT)
+input_bounce = tk.Entry(basic_setting_frame, width=4)
+input_bounce.pack(side=tk.LEFT)
 
 # Progress bar
 pb = ttk.Progressbar(root, orient='horizontal', mode='determinate', length=560)
