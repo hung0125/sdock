@@ -217,6 +217,8 @@ def base_stock_anal(stock_idx_or_name, is_override_filter):
             for i in range(len(opens_m)):
                 p_op = opens_m[i]
                 p_cl = closes_m[i]
+                if p_op == None or p_cl == None:
+                    break
                 ts = ts2date(dat_m['timestamp'][i]).split() # d m y
                 # if ts[1] == 'Sep':
                 #     print(f'[{ts[1]}]{int(date_now[2])}-{int(ts[2])}-1 -> {p_op}, {p_cl}, {pchange(p_cl, p_op)}')
